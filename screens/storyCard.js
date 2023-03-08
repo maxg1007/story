@@ -28,12 +28,39 @@ export default class StoryCard extends Component {
       fontsLoaded: false,
       story_id: this.props.story.key,
       story_data: this.props.story.value,
+      is_liked: false,
+      likes: this.props.story.value.likes,
     };
   }
   async _loadFontsAsync() {
     await Font.loadAsync(customFonts);
     this.setState({ fontsLoaded: true });
   }
+  like = () => {
+    if (this.state.is_liked) {
+      firebase
+        .database()
+        .ref("posts")
+        .child(this.props.route.params.story_id)
+        .child("likes")
+        .set(firebase.database.ServerValue.increment(-1));
+      this.setState({
+        likes: (this.state.likes -= 1),
+        is_liked: false,
+      });
+    } else {
+      firebase
+        .database()
+        .ref("posts")
+        .child(this.props.route.params.story_id)
+        .child("likes")
+        .set(firebase.database.ServerValue.increment(1));
+      this.setState({
+        likes: (this.state.likes += 1),
+        is_liked: true,
+      });
+    }
+  };
   componentDidMount() {
     this._loadFontsAsync();
     this.fetchUser();
@@ -82,7 +109,7 @@ export default class StoryCard extends Component {
             }
           >
             <Image
-              source={images[story.preview_images]}
+              source={images[story.preview_image]}
               style={styles.storyImage}
             ></Image>
             <View style={styles.titleContainer}>
@@ -115,12 +142,15 @@ export default class StoryCard extends Component {
               </Text>
             </View>
             <View style={styles.actionContainer}>
-              <View style={styles.likeButton}>
-                <Ionicons
-                  name={"heart"}
-                  size={RFValue(30)}
-                  color={"white"}
-                ></Ionicons>
+              <TouchableOpacity
+                style={
+                  this.state.is_liked
+                    ? styles.likeButtonLiked
+                    : styles.likeButtonDisliked
+                }
+                onPress={this.like}
+              >
+                <Ionicons name={"heart"} size={RFValue(30)} color={"white"} />
                 <Text
                   style={
                     this.state.light_theme
@@ -128,9 +158,9 @@ export default class StoryCard extends Component {
                       : styles.likeText
                   }
                 >
-                  10k
+                  {this.state.likes}
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
         </TouchableOpacity>
@@ -220,5 +250,24 @@ const styles = StyleSheet.create({
     fontFamily: "Bubblegum-Sans",
     fontSize: RFValue(25),
     marginLeft: RFValue(5),
+  },
+  likeButtonLiked: {
+    flexDirection: "row",
+    width: RFValue(160),
+    height: RFValue(40),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#eb3948",
+    borderRadius: RFValue(30),
+  },
+  likeButtonDisliked: {
+    flexDirection: "row",
+    width: RFValue(160),
+    height: RFValue(40),
+    justifyContent: "center",
+    alignItems: "center",
+    borderColor: "#eb3948",
+    borderRadius: RFValue(30),
+    borderWidth: 2,
   },
 });

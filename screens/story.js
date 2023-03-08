@@ -33,6 +33,8 @@ export default class StoryScreen extends Component {
       speakerColor: "gray",
       speakerIcon: "volume-high-outline",
       light_theme: true,
+      likes: this.props.route.params.story.story.likes,
+      is_liked: false,
     };
   }
 
@@ -72,6 +74,31 @@ export default class StoryScreen extends Component {
       Speech.stop();
     }
   }
+  like = () => {
+    if (this.state.is_liked) {
+      firebase
+        .database()
+        .ref("posts")
+        .child(this.props.route.params.story_id)
+        .child("likes")
+        .set(firebase.database.ServerValue.increment(-1));
+      this.setState({
+        likes: (this.state.likes -= 1),
+        is_liked: false,
+      });
+    } else {
+      firebase
+        .database()
+        .ref("posts")
+        .child(this.props.route.params.story_id)
+        .child("likes")
+        .set(firebase.database.ServerValue.increment(1));
+      this.setState({
+        likes: (this.state.likes += 1),
+        is_liked: true,
+      });
+    }
+  };
 
   render() {
     if (!this.props.route.params) {
@@ -186,7 +213,14 @@ export default class StoryScreen extends Component {
                 </Text>
               </View>
               <View style={styles.actionContainer}>
-                <View style={styles.likeButton}>
+                <TouchableOpacity
+                  style={
+                    this.state.is_liked
+                      ? styles.likeButtonLiked
+                      : styles.likeButtonDisliked
+                  }
+                  onPress={this.like}
+                >
                   <Ionicons name={"heart"} size={RFValue(30)} color={"white"} />
                   <Text
                     style={
@@ -195,9 +229,9 @@ export default class StoryScreen extends Component {
                         : styles.likeText
                     }
                   >
-                    12k
+                    {this.state.likes}
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
             </ScrollView>
           </View>
@@ -347,5 +381,24 @@ const styles = StyleSheet.create({
     fontFamily: "Bubblegum-Sans",
     fontSize: RFValue(25),
     marginLeft: RFValue(5),
+  },
+  likeButtonLiked: {
+    flexDirection: "row",
+    width: RFValue(160),
+    height: RFValue(40),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#eb3948",
+    borderRadius: RFValue(30),
+  },
+  likeButtonDisliked: {
+    flexDirection: "row",
+    width: RFValue(160),
+    height: RFValue(40),
+    justifyContent: "center",
+    alignItems: "center",
+    borderColor: "#eb3948",
+    borderRadius: RFValue(30),
+    borderWidth: 2,
   },
 });
